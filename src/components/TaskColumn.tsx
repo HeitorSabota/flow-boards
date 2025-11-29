@@ -39,23 +39,24 @@ export const TaskColumn = ({
             {column.tasks.length}
           </span>
         </h3>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-7 w-7">
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onEditColumn(column)}>
-              <Pencil className="h-3 w-3 mr-2" />
-              Editar coluna
+              <Pencil className="h-3 w-3 mr-2" /> Editar coluna
             </DropdownMenuItem>
+
             <DropdownMenuItem
               onClick={() => onDeleteColumn(column.id)}
               className="text-destructive focus:text-destructive"
             >
-              <Trash2 className="h-3 w-3 mr-2" />
-              Excluir coluna
+              <Trash2 className="h-3 w-3 mr-2" /> Excluir coluna
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -83,9 +84,9 @@ export const TaskColumn = ({
         onClick={() => onAddTask(column.id)}
         className="mt-2 w-full justify-start text-muted-foreground hover:text-foreground"
       >
-        <Plus className="h-4 w-4 mr-2" />
-        Adicionar tarefa
+        <Plus className="h-4 w-4 mr-2" /> Adicionar tarefa
       </Button>
     </div>
   );
 };
+

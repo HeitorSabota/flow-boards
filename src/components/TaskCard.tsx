@@ -45,24 +45,33 @@ export const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
         <h4 className="font-medium text-sm text-card-foreground flex-1">
           {task.title}
         </h4>
+
+        {/* 🔥 Bloqueia que o clique abra drag */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
               className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+              onPointerDown={(e) => e.stopPropagation()} // 👈 AQUI
             >
               <MoreVertical className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(task)}>
+            <DropdownMenuItem
+              onClick={() => onEdit(task)}
+              onPointerDown={(e) => e.stopPropagation()} // 👈 EVITA DRAG
+            >
               <Pencil className="h-3 w-3 mr-2" />
               Editar
             </DropdownMenuItem>
+
             <DropdownMenuItem
               onClick={() => onDelete(task.id)}
               className="text-destructive focus:text-destructive"
+              onPointerDown={(e) => e.stopPropagation()} // 👈 EVITA DRAG
             >
               <Trash2 className="h-3 w-3 mr-2" />
               Excluir
@@ -70,13 +79,13 @@ export const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      
+
       {task.description && (
         <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
           {task.description}
         </p>
       )}
-      
+
       {task.tags.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {task.tags.map((tag) => (
@@ -87,3 +96,4 @@ export const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
     </div>
   );
 };
+

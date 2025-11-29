@@ -21,12 +21,10 @@ export const ColumnDialog = ({
   const [title, setTitle] = useState("");
 
   useEffect(() => {
-    if (column) {
-      setTitle(column.title);
-    } else {
-      setTitle("");
+    if (open) {
+      setTitle(column?.title ?? "");
     }
-  }, [column, open]);
+  }, [open, column]);
 
   const handleSave = () => {
     if (!title.trim()) return;
@@ -68,3 +66,4 @@ export const ColumnDialog = ({
     </Dialog>
   );
 };
+

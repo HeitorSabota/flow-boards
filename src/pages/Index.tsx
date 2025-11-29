@@ -55,57 +55,50 @@ const Index = () => {
 
   const handleSaveTask = (taskData: Omit<Task, "id" | "order"> & { id?: string }) => {
     setColumns((prev) => {
-      const updatedColumns = [...prev];
-      const columnIndex = updatedColumns.findIndex((c) => c.id === taskData.columnId);
-
-      if (columnIndex === -1) return prev;
+      const updated = [...prev];
+      const colIndex = updated.findIndex((c) => c.id === taskData.columnId);
+      if (colIndex === -1) return prev;
 
       if (taskData.id) {
-        // Editing existing task
-        const taskIndex = updatedColumns[columnIndex].tasks.findIndex(
-          (t) => t.id === taskData.id
-        );
-        if (taskIndex !== -1) {
-          updatedColumns[columnIndex].tasks[taskIndex] = {
-            ...updatedColumns[columnIndex].tasks[taskIndex],
+        // EDITAR
+        const tIndex = updated[colIndex].tasks.findIndex((t) => t.id === taskData.id);
+        if (tIndex !== -1) {
+          updated[colIndex].tasks[tIndex] = {
+            ...updated[colIndex].tasks[tIndex],
             ...taskData,
-          } as Task;
+          };
         }
       } else {
-        // Creating new task
-        const newTask: Task = {
+        // CRIAR
+        updated[colIndex].tasks.push({
           id: Date.now().toString(),
           title: taskData.title,
           description: taskData.description,
           tags: taskData.tags,
           columnId: taskData.columnId,
-          order: updatedColumns[columnIndex].tasks.length,
-        };
-        updatedColumns[columnIndex].tasks.push(newTask);
+          order: updated[colIndex].tasks.length,
+        });
       }
 
-      return updatedColumns;
+      return updated;
     });
 
     toast({
       title: taskData.id ? "Tarefa atualizada" : "Tarefa criada",
-      description: taskData.id
-        ? "A tarefa foi atualizada com sucesso."
-        : "Uma nova tarefa foi adicionada.",
     });
   };
 
   const handleDeleteTask = (taskId: string) => {
     setColumns((prev) =>
-      prev.map((col) => ({
-        ...col,
-        tasks: col.tasks.filter((t) => t.id !== taskId),
+      prev.map((c) => ({
+        ...c,
+        tasks: c.tasks.filter((t) => t.id !== taskId),
       }))
     );
 
     toast({
-      title: "Tarefa excluída",
-      description: "A tarefa foi removida com sucesso.",
+      title: "Tarefa removida",
+      description: "A tarefa foi excluída.",
     });
   };
 
@@ -122,12 +115,9 @@ const Index = () => {
   const handleSaveColumn = (title: string, columnId?: string) => {
     if (columnId) {
       setColumns((prev) =>
-        prev.map((col) => (col.id === columnId ? { ...col, title } : col))
+        prev.map((c) => (c.id === columnId ? { ...c, title } : c))
       );
-      toast({
-        title: "Coluna atualizada",
-        description: "O nome da coluna foi atualizado.",
-      });
+      toast({ title: "Coluna atualizada" });
     } else {
       const newColumn: Column = {
         id: Date.now().toString(),
@@ -136,72 +126,85 @@ const Index = () => {
         tasks: [],
       };
       setColumns([...columns, newColumn]);
-      toast({
-        title: "Coluna criada",
-        description: "Uma nova coluna foi adicionada.",
-      });
+      toast({ title: "Coluna criada" });
     }
   };
 
   const handleDeleteColumn = (columnId: string) => {
     const column = columns.find((c) => c.id === columnId);
-    if (column && column.tasks.length > 0) {
+    if (!column) return;
+
+    if (column.tasks.length > 0) {
       toast({
         title: "Não é possível excluir",
-        description: "Remova todas as tarefas antes de excluir a coluna.",
+        description: "Remova todas as tarefas antes.",
         variant: "destructive",
       });
       return;
     }
 
-    setColumns((prev) => prev.filter((col) => col.id !== columnId));
-    toast({
-      title: "Coluna excluída",
-      description: "A coluna foi removida com sucesso.",
-    });
+    setColumns((prev) => prev.filter((c) => c.id !== columnId));
+    toast({ title: "Coluna removida" });
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
+  // DRAG & DROP FINAL (VERSÃO FUNCIONAL)
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over) return;
 
-    const activeTaskId = active.id as string;
-    const overColumnId = over.id as string;
+    const activeId = active.id as string;
+    const overId = over.id as string;
 
     setColumns((prev) => {
-      const sourceColumn = prev.find((col) =>
-        col.tasks.some((t) => t.id === activeTaskId)
-      );
-      const targetColumn = prev.find((col) => col.id === overColumnId);
+      const sourceColumn = prev.find((c) => c.tasks.some((t) => t.id === activeId));
+      const targetColumn =
+        prev.find((c) => c.tasks.some((t) => t.id === overId)) ||
+        prev.find((c) => c.id === overId);
 
       if (!sourceColumn || !targetColumn) return prev;
 
-      const task = sourceColumn.tasks.find((t) => t.id === activeTaskId);
-      if (!task) return prev;
+      const activeTask = sourceColumn.tasks.find((t) => t.id === activeId);
+      if (!activeTask) return prev;
 
-      // Remove from source
-      const newSourceTasks = sourceColumn.tasks.filter((t) => t.id !== activeTaskId);
-      
-      // Add to target
-      const updatedTask = { ...task, columnId: overColumnId };
-      const newTargetTasks =
-        sourceColumn.id === targetColumn.id
-          ? arrayMove(
-              sourceColumn.tasks,
-              sourceColumn.tasks.findIndex((t) => t.id === activeTaskId),
-              targetColumn.tasks.findIndex((t) => t.id === over.id)
-            )
-          : [...targetColumn.tasks, updatedTask];
+      const sourceTasks = sourceColumn.tasks.filter((t) => t.id !== activeId);
 
-      return prev.map((col) => {
-        if (col.id === sourceColumn.id && sourceColumn.id !== targetColumn.id) {
-          return { ...col, tasks: newSourceTasks };
+      const targetIndex = targetColumn.tasks.findIndex((t) => t.id === overId);
+
+      let newTargetTasks;
+
+      // MESMA COLUNA
+      if (sourceColumn.id === targetColumn.id) {
+        const oldIndex = sourceColumn.tasks.findIndex((t) => t.id === activeId);
+        const newIndex = targetIndex === -1 ? sourceColumn.tasks.length : targetIndex;
+
+        const moved = arrayMove(sourceColumn.tasks, oldIndex, newIndex);
+        newTargetTasks = moved;
+      }
+      // COLUNA DIFERENTE
+      else {
+        const updatedTask = { ...activeTask, columnId: targetColumn.id };
+
+        if (targetIndex === -1) {
+          newTargetTasks = [...targetColumn.tasks, updatedTask];
+        } else {
+          newTargetTasks = [
+            ...targetColumn.tasks.slice(0, targetIndex),
+            updatedTask,
+            ...targetColumn.tasks.slice(targetIndex),
+          ];
         }
-        if (col.id === targetColumn.id) {
-          return { ...col, tasks: newTargetTasks };
-        }
-        return col;
+      }
+
+      const normalize = (tasks: Task[]) =>
+        tasks.map((t, i) => ({ ...t, order: i }));
+
+      return prev.map((c) => {
+        if (c.id === sourceColumn.id)
+          return { ...c, tasks: normalize(sourceTasks) };
+
+        if (c.id === targetColumn.id)
+          return { ...c, tasks: normalize(newTargetTasks) };
+
+        return c;
       });
     });
   };
@@ -262,3 +265,4 @@ const Index = () => {
 };
 
 export default Index;
+

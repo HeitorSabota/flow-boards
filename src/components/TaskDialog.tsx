@@ -20,7 +20,7 @@ interface TaskDialogProps {
   onOpenChange: (open: boolean) => void;
   task?: Task;
   columnId: string;
-  onSave: (task: Omit<Task, "id" | "order"> & { id?: string }) => void;
+  onSave: (task: Omit<Task, "order">) => void;
 }
 
 const TAG_COLORS: { value: TagColor; label: string }[] = [
@@ -47,28 +47,25 @@ export const TaskDialog = ({
   const [newTagLabel, setNewTagLabel] = useState("");
   const [newTagColor, setNewTagColor] = useState<TagColor>("blue");
 
+  // 🔥 Preenche a tarefa quando abre o modal
   useEffect(() => {
-    if (task) {
-      setTitle(task.title);
-      setDescription(task.description || "");
-      setTags(task.tags);
-    } else {
-      setTitle("");
-      setDescription("");
-      setTags([]);
+    if (open) {
+      setTitle(task?.title ?? "");
+      setDescription(task?.description ?? "");
+      setTags(task?.tags ?? []);
     }
-  }, [task, open]);
+  }, [open, task]);
 
   const handleAddTag = () => {
     if (!newTagLabel.trim()) return;
-    
+
     const newTag: Tag = {
       id: Date.now().toString(),
       label: newTagLabel.trim(),
       color: newTagColor,
     };
-    
-    setTags([...tags, newTag]);
+
+    setTags((prev) => [...prev, newTag]);
     setNewTagLabel("");
     setNewTagColor("blue");
   };
@@ -85,7 +82,7 @@ export const TaskDialog = ({
       title: title.trim(),
       description: description.trim(),
       tags,
-      columnId: task?.columnId || columnId,
+      columnId,
     });
 
     onOpenChange(false);
@@ -95,9 +92,7 @@ export const TaskDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>
-            {task ? "Editar tarefa" : "Nova tarefa"}
-          </DialogTitle>
+          <DialogTitle>{task ? "Editar tarefa" : "Nova tarefa"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -124,6 +119,7 @@ export const TaskDialog = ({
 
           <div className="space-y-2">
             <Label>Etiquetas</Label>
+
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
                 {tags.map((tag) => (
@@ -135,6 +131,7 @@ export const TaskDialog = ({
                 ))}
               </div>
             )}
+
             <div className="flex gap-2">
               <Input
                 value={newTagLabel}
@@ -142,6 +139,7 @@ export const TaskDialog = ({
                 placeholder="Nova etiqueta"
                 onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
               />
+
               <Select
                 value={newTagColor}
                 onValueChange={(value) => setNewTagColor(value as TagColor)}
@@ -162,12 +160,8 @@ export const TaskDialog = ({
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                onClick={handleAddTag}
-              >
+
+              <Button type="button" size="icon" variant="outline" onClick={handleAddTag}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -177,12 +171,11 @@ export const TaskDialog = ({
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSave}>
-              {task ? "Salvar" : "Criar"}
-            </Button>
+            <Button onClick={handleSave}>{task ? "Salvar" : "Criar"}</Button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
   );
 };
+
